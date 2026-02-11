@@ -1,0 +1,7 @@
+{
+  "name": "Dell Engenharia - Licenciamento",
+  "description": "Agente de IA especialista em análise de processos de licenciamento, arquitetura e gestão documental com Gemini 3.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
