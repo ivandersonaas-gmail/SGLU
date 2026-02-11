@@ -88,14 +88,18 @@ const logHistory = async (processId: string, action: string, notes?: string) => 
 };
 
 export const ProcessService = {
-    async getAll() {
-        const { data: processes, error } = await supabase
+    async getAll(page: number = 1, limit: number = 20) {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        const { data: processes, error, count } = await supabase
             .from('processes')
-            .select('*, applicants(*)')
-            .order('created_at', { ascending: false });
+            .select('*, applicants(*)', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) throw formatError(error, "Listar Processos");
-        if (!processes) return [];
+        if (!processes) return { data: [], count: 0 };
 
         const analystIds = Array.from(new Set(processes.map((p: any) => p.analyst_id).filter(Boolean)));
 
@@ -107,10 +111,12 @@ export const ProcessService = {
             }
         }
 
-        return processes.map((p: any) => ({
+        const data = processes.map((p: any) => ({
             ...p,
             analyst_profile: p.analyst_id ? profilesMap[p.analyst_id] : undefined
         }));
+
+        return { data, count: count || 0 };
     },
 
     async getById(id: string) {
