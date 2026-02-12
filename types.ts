@@ -23,7 +23,8 @@ export enum AppView {
   LIVE = 'LIVE',
   ADMIN_PANEL = 'ADMIN_PANEL',
   LEGISLATION = 'LEGISLATION',
-  DOC_TEMPLATES = 'DOC_TEMPLATES' // Nova View
+  DOC_TEMPLATES = 'DOC_TEMPLATES',
+  AUDIT_COCKPIT = 'AUDIT_COCKPIT' // Nova View Modulo Auditoria
 }
 
 export enum UserRole {
@@ -66,7 +67,7 @@ export interface ChatState {
 
 export type ProcessStatus = 'PROTOCOLADO' | 'EM_ANALISE' | 'PENDENTE_DOC' | 'FISCALIZACAO' | 'ANUENCIA_EMITIDA' | 'AGUARDANDO_ASSINATURA' | 'FINALIZADO' | 'INDEFERIDO';
 
-export type ProcessType = 
+export type ProcessType =
   | 'Alteração de Tit. e/ou Projeto Aprovado com Habite-se'
   | 'Alteração de Tit. e/ou projeto aprovado com habite-se - Comercial'
   | 'Revista de Habite-se'
@@ -96,7 +97,7 @@ export type ProcessType =
   | 'Licença de Instalação de Equipamento - Antena'
   | 'Licenciamento Urbano'
   | 'Demolição'
-  | 'HABITE_SE' 
+  | 'HABITE_SE'
   | 'ALVARA_CONSTRUCAO';
 
 export type PersonType = 'PF' | 'PJ';
@@ -105,14 +106,14 @@ export interface Applicant {
   id: string;
   created_at?: string;
   name: string;
-  cpf: string; 
+  cpf: string;
   person_type: PersonType;
   phone: string;
   email?: string;
 }
 
 export interface Process {
-  id: string; 
+  id: string;
   created_at?: string;
   protocol_number: string;
   applicant_id: string;
@@ -122,9 +123,9 @@ export interface Process {
   address_work: string;
   technical_notes?: string;
   analyst_id?: string | null;
-  applicants?: Applicant; 
+  applicants?: Applicant;
   // Join com profiles para saber o nome do analista
-  analyst_profile?: UserProfile; 
+  analyst_profile?: UserProfile;
 }
 
 export interface Document {
@@ -136,14 +137,15 @@ export interface Document {
   created_at: string;
   analyzed_by_ai: boolean;
   ai_summary?: string;
+  extracted_text?: string; // Novo: Cache de OCR
 }
 
 export interface TourScene {
-    id: string;
-    process_id: string;
-    title: string;
-    image_url: string;
-    created_at: string;
+  id: string;
+  process_id: string;
+  title: string;
+  image_url: string;
+  created_at: string;
 }
 
 // History Interface
@@ -162,52 +164,53 @@ export interface LegislationFile {
   category: 'ZONEAMENTO' | 'CODIGO_OBRAS' | 'PLANO_DIRETOR' | 'AMBIENTAL' | 'OUTROS';
   file_url: string;
   description?: string;
+  extracted_text?: string; // Novo: Cache de OCR
 }
 
 // DOCUMENT TEMPLATES
 export interface DocumentTemplate {
-    id: string;
-    type: 'HABITE_SE' | 'ALVARA' | 'ANUENCIA';
-    content: string; // HTML string with tags
-    updated_at: string;
+  id: string;
+  type: 'HABITE_SE' | 'ALVARA' | 'ANUENCIA';
+  content: string; // HTML string with tags
+  updated_at: string;
 }
 
 // New: Extracted Parameters for Audit
 export type AuditStatus = 'CONFORME' | 'IRREGULAR' | 'NA' | 'PENDENTE' | 'DIVERGENTE';
 
 export interface AuditItem {
-    status: AuditStatus;
-    value?: string | number;
-    ai_value?: string | number;
-    evidence_doc?: string;
-    irregularity_note?: string;
-    timestamp?: number;
-    custom_data?: any;
+  status: AuditStatus;
+  value?: string | number;
+  ai_value?: string | number;
+  evidence_doc?: string;
+  irregularity_note?: string;
+  timestamp?: number;
+  custom_data?: any;
 }
 
 // Specific Audit Structures
 export interface PreliminaryCheck {
-    one_doc_status: 'SIM' | 'NAO' | null;
-    one_doc_obs?: string;
-    env_license_status: 'SIM' | 'NAO' | 'NA' | null;
-    env_license_ai_proof?: string; 
+  one_doc_status: 'SIM' | 'NAO' | null;
+  one_doc_obs?: string;
+  env_license_status: 'SIM' | 'NAO' | 'NA' | null;
+  env_license_ai_proof?: string;
 }
 
 export interface CertificateData {
-    quadra?: string;
-    lote?: string;
-    loteamento?: string;
-    matricula?: string;
+  quadra?: string;
+  lote?: string;
+  loteamento?: string;
+  matricula?: string;
 }
 
 // New: Comparison Matrix Items
 export interface ComparisonItem {
-    source_a: string; 
-    source_b: string; 
-    source_c?: string; 
-    source_d?: string; 
-    status: 'CONFORME' | 'DIVERGENTE' | 'PENDENTE';
-    obs?: string;
+  source_a: string;
+  source_b: string;
+  source_c?: string;
+  source_d?: string;
+  status: 'CONFORME' | 'DIVERGENTE' | 'PENDENTE';
+  obs?: string;
 }
 
 export interface ProjectParameters {
@@ -217,8 +220,8 @@ export interface ProjectParameters {
   area_terreno?: number;
   taxa_ocupacao?: number;
   permeabilidade?: number;
-  area_uso_comum?: number; 
-  indice_aproveitamento?: number; 
+  area_uso_comum?: number;
+  indice_aproveitamento?: number;
   recuo_frontal?: number;
   recuo_lateral_esq?: number;
   recuo_lateral_dir?: number;
@@ -227,103 +230,119 @@ export interface ProjectParameters {
   ai_validation_summary?: string;
   status_compliance?: 'CONFORME' | 'INFRACAO' | 'ANALISE_MANUAL' | 'PENDENTE';
   audit_json?: {
-      current_step?: number;
-      steps_validated?: {
-          preliminary?: boolean; 
-          documentation?: boolean; 
-          cross_reference?: boolean; 
-          responsibility?: boolean; 
-      };
-      
-      // STEP 1: Preliminar
-      preliminary_data?: PreliminaryCheck;
+    current_step?: number;
+    steps_validated?: {
+      preliminary?: boolean;
+      documentation?: boolean;
+      cross_reference?: boolean;
+      responsibility?: boolean;
+    };
 
-      // STEP 2: Documentos & Consistência
-      entity_validation?: {
-          person_type?: 'PF' | 'PJ';
-          contrato_social?: AuditItem;
-          procuracao?: AuditItem;
-          doc_pessoal?: AuditItem;
-      };
-      
-      certificate_data?: CertificateData; 
+    // STEP 1: Preliminar
+    preliminary_data?: PreliminaryCheck;
 
-      documents_checklist?: {
-          protocolo?: AuditItem;
-          bci?: AuditItem;
-          cnd?: AuditItem;
-          inteiro_teor?: AuditItem;
-          art_projeto?: AuditItem;
-          art_execucao?: AuditItem;
-          licenca_anterior?: AuditItem;
-          projeto_aprovado?: AuditItem;
-          avcb?: AuditItem;
-          carta_avenca?: AuditItem;
-          
-          licenca_construcao?: AuditItem;
-          taxa_bci?: AuditItem;
-          taxa_cnd?: AuditItem;
-          documento_escritura?: AuditItem;
-          documento_inteiro_teor?: AuditItem;
-          checklist_fiscal?: AuditItem;
-          projetos_aprovados?: AuditItem;
-          empresa_contrato?: AuditItem;
-          pessoa_fisica_doc?: AuditItem;
-          nome_endereco_consistencia?: AuditItem;
-      };
+    // STEP 2: Documentos & Consistência
+    entity_validation?: {
+      person_type?: 'PF' | 'PJ';
+      contrato_social?: AuditItem;
+      procuracao?: AuditItem;
+      doc_pessoal?: AuditItem;
+    };
 
-      // STEP 3: Cruzamento de Dados (HABITE-SE) ou Engenharia (LICENÇA)
-      titularity_matrix?: {
-          protocol_vs_deed?: ComparisonItem; 
-          protocol_vs_project?: ComparisonItem; 
-          protocol_vs_art?: ComparisonItem; 
-      };
+    certificate_data?: CertificateData;
 
-      location_matrix?: {
-          lot_block_compare?: ComparisonItem; 
-          street_compare?: ComparisonItem; 
-          neighborhood_compare?: ComparisonItem; 
-      };
+    documents_checklist?: {
+      protocolo?: AuditItem;
+      bci?: AuditItem;
+      cnd?: AuditItem;
+      inteiro_teor?: AuditItem;
+      art_projeto?: AuditItem;
+      art_execucao?: AuditItem;
+      licenca_anterior?: AuditItem;
+      projeto_aprovado?: AuditItem;
+      avcb?: AuditItem;
+      carta_avenca?: AuditItem;
 
-      dimension_matrix?: {
-          land_area_compare?: ComparisonItem; 
-          built_area_compare?: ComparisonItem; 
-      };
+      licenca_construcao?: AuditItem;
+      taxa_bci?: AuditItem;
+      taxa_cnd?: AuditItem;
+      documento_escritura?: AuditItem;
+      documento_inteiro_teor?: AuditItem;
+      checklist_fiscal?: AuditItem;
+      projetos_aprovados?: AuditItem;
+      empresa_contrato?: AuditItem;
+      pessoa_fisica_doc?: AuditItem;
+      nome_endereco_consistencia?: AuditItem;
+    };
 
-      checklist_matrix?: {
-          piso_tatil?: AuditItem;
-          janelas_vizinhanca?: AuditItem;
-          revestimento_impermeavel?: AuditItem; 
-          
-          recuo_frontal?: AuditItem;
-          recuos_laterais?: AuditItem;
-          recuo_fundos?: AuditItem; 
-          taxa_ocupacao?: AuditItem; 
-          projeto_assinado?: AuditItem;
-          medidas_conferem?: AuditItem; 
-          confrontantes_conferem?: AuditItem; 
-          area_uso_comum?: AuditItem; 
+    // STEP 3: Cruzamento de Dados (HABITE-SE) ou Engenharia (LICENÇA)
+    titularity_matrix?: {
+      protocol_vs_deed?: ComparisonItem;
+      protocol_vs_project?: ComparisonItem;
+      protocol_vs_art?: ComparisonItem;
+    };
 
-          habitabilidade?: AuditItem;
-          calcada_padrao?: AuditItem;
-          numeracao_predial?: AuditItem;
-          area_vistoria_vs_projeto?: AuditItem;
-      };
+    location_matrix?: {
+      lot_block_compare?: ComparisonItem;
+      street_compare?: ComparisonItem;
+      neighborhood_compare?: ComparisonItem;
+    };
 
-      // STEP 4: Responsabilidade (Licenciamento)
-      responsibility_matrix?: {
-          certidao_data_check?: AuditItem;
+    dimension_matrix?: {
+      land_area_compare?: ComparisonItem;
+      built_area_compare?: ComparisonItem;
+    };
 
-          protocol_vs_deed?: ComparisonItem;
-          protocol_vs_project?: ComparisonItem;
-          protocol_vs_art?: ComparisonItem;
-          
-          lot_block_compare?: ComparisonItem;
-          street_compare?: ComparisonItem;
-          neighborhood_compare?: ComparisonItem;
-          
-          land_area_compare?: ComparisonItem;
-      };
+    checklist_matrix?: {
+      piso_tatil?: AuditItem;
+      janelas_vizinhanca?: AuditItem;
+      revestimento_impermeavel?: AuditItem;
+
+      recuo_frontal?: AuditItem;
+      recuos_laterais?: AuditItem;
+      recuo_fundos?: AuditItem;
+      taxa_ocupacao?: AuditItem;
+      projeto_assinado?: AuditItem;
+      medidas_conferem?: AuditItem;
+      confrontantes_conferem?: AuditItem;
+      area_uso_comum?: AuditItem;
+
+      habitabilidade?: AuditItem;
+      calcada_padrao?: AuditItem;
+      numeracao_predial?: AuditItem;
+      area_vistoria_vs_projeto?: AuditItem;
+    };
+
+    // STEP 4: Responsabilidade (Licenciamento)
+    responsibility_matrix?: {
+      certidao_data_check?: AuditItem;
+
+      protocol_vs_deed?: ComparisonItem;
+      protocol_vs_project?: ComparisonItem;
+      protocol_vs_art?: ComparisonItem;
+
+      lot_block_compare?: ComparisonItem;
+      street_compare?: ComparisonItem;
+      neighborhood_compare?: ComparisonItem;
+
+
+      land_area_compare?: ComparisonItem;
+    };
+
+    // Generic Cockpit Storage for AI Data (Flexible)
+    cockpit?: {
+      processInfo?: any;
+      sections?: {
+        title: string;
+        items: Array<{
+          id: string;
+          text: string;
+          status: 'ok' | 'error' | 'warning' | 'pending';
+          source?: string;
+          comment?: string;
+        }>;
+      }[];
+    };
   };
 }
 
@@ -332,6 +351,7 @@ export interface ChatInterfaceProps {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   processId: string | null;
+  onOpenAudit?: (markdown: string) => void;
 }
 
 export interface ToolHandlers {

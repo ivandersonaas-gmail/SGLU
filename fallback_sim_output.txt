@@ -1,0 +1,6 @@
+🌐 Simulating Browser RAG Request (ANON KEY)...
+Input: "qual artigo fala do prisma de ventilação" -> Otimizada: "prisma ventilaçã"
+⚠️ SIMULATION: Strict search failed. Trying BROAD search (OR)...
+ Broader Query: "prisma | ventilaçã"
+⚠️ BROWSER SIMULATION RETURNED EMPTY RESULTS.
+This might mean the search index is not updating or the query is still issue.

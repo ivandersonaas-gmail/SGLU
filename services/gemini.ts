@@ -29,14 +29,6 @@ const licensingTools: FunctionDeclaration[] = [
 const getSystemInstruction = async (mode: string, specialty?: string) => {
   if (mode !== 'LICENSING') return "Você é um assistente útil. Responda em Português.";
 
-  let lawsContext = "NENHUMA LEI ESPECÍFICA CARREGADA.";
-  try {
-    const laws = await LegislationService.listLaws();
-    if (laws && laws.length > 0) {
-      lawsContext = "LEIS NA BASE: " + laws.map(l => `"${l.name}"`).join(", ") + ".";
-    }
-  } catch (e) { console.warn("Falha laws:", e); }
-
   // Seleção da Lente Técnica
   let lensContent = "";
   switch (specialty) {
@@ -47,11 +39,19 @@ const getSystemInstruction = async (mode: string, specialty?: string) => {
     default: lensContent = "Realize uma auditoria geral baseada nas normas urbanísticas vigentes.";
   }
 
-
   // Definição do Título do Módulo Técnico
   let technicalModuleTitle = "QUADRO TÉCNICO (Módulo Específico)";
   if (specialty === 'LOTEAMENTO') {
-    technicalModuleTitle = "QUADRO TÉCNICO (Módulo B - Loteamento/Condomínio - Art. 87 Plano Diretor)";
+    technicalModuleTitle = `QUADRO TÉCNICO (Módulo B - Loteamento/Condomínio - Art. 87 Plano Diretor)
+    
+    4.1. FASE 1: PRÉ-APROVAÇÃO (Projeto Urbanístico)
+    (Analise: ART, Dimensões, Raios, Cordas, Tangências, Numeração de Ruas)
+
+    4.2. FASE 2: ATO DE APROVAÇÃO (Infraestrutura)
+    (Analise: Drenagem [Estudo Capacidade, Memorial, ART], Cronograma, Anuências, Perfis de Vias, Marcos)
+
+    4.3. FASE 3: LICENÇA DE IMPLANTAÇÃO
+    (Analise: Projetos Complementares, ART Execução)`;
   } else if (specialty === 'REFORMA') {
     technicalModuleTitle = "QUADRO TÉCNICO (Módulo Reforma e Ampliação)";
   } else if (specialty === 'EDIFICACOES') {
@@ -72,8 +72,9 @@ ${PROMPTS_BASE.MODULO_A}
 ## 3. LENTE TÉCNICA ATIVA (ESPECIALIDADE)
 ${lensContent}
 
-## 4. CONTEXTO DE LEIS LOCAIS
-${lawsContext}
+## 4. CONTEXTO DE LEIS (RAG - BUSCA SOB DEMANDA)
+As leis específicas relevantes para a pergunta do usuário serão fornecidas contextualmente na mensagem abaixo.
+Use APENAS as leis fornecidas. Se a lei não for citada, NÃO INVENTE.
 
 ## 5. INSTRUÇÃO DE SAÍDA (ESTRUTURA DO RELATÓRIO)
 
@@ -132,13 +133,59 @@ export const streamChatResponse = async (
   const modelName = MODEL_MAIN;
   const systemInstruction = await getSystemInstruction(mode, specialty);
 
-  /* 
-  const tools: any[] = [];
-  if (attachments.length === 0 && mode === 'LICENSING' && toolHandlers) {
-    if (useGrounding) tools.push({ googleSearch: {} });
-    tools.push({ functionDeclarations: licensingTools });
+  // --- RAG IMPLEMENTATION (Busca Inteligente) ---
+  let ragContext = "";
+  if (mode === 'LICENSING' && newMessage.length > 5) {
+    try {
+      // TERCEIRA TENTATIVA (DEFINITIVA): Normalização Linguística
+      // O banco tem "Artigo 242", mas o usuário digita "art 242". O Facet do Postgres não cruza "art" com "artigo".
+      let failSafeQuery = newMessage.toLowerCase();
+
+      // 1. Expande abreviações comuns em leis
+      failSafeQuery = failSafeQuery
+        .replace(/\bart\.?\b/gi, 'artigo ') // art. ou art -> artigo
+        .replace(/\bpar\.?\b/gi, 'parágrafo ') // par. -> parágrafo
+        .replace(/\binc\.?\b/gi, 'inciso '); // inc. -> inciso
+
+      // 2. Limpeza de Stop Words (CONVERSACIONAL - CRÍTICAS APENAS)
+      // Remove apenas palavras que desviam o foco semântico ("qual", "onde")
+      // Mantemos artigos/preposições (o, a, de) pois o Regex \b quebra em acentos (ventilação -> ventila ç ã o -> remove o)
+      failSafeQuery = failSafeQuery
+        .replace(/\b(qual|que|diz|sobre|fala|onde|tem)\b/gi, ' ')
+        .replace(/[^\w\s\u00C0-\u00FF]/gi, ' ') // Remove símbolos
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Fallback: Se sobrou muito pouco, tenta a query original limpa
+      if (failSafeQuery.length < 3) failSafeQuery = newMessage.replace(/[^\w\s]/gi, ' ');
+
+      console.log(`🔍 RAG Query Otimizada: "${failSafeQuery}"`);
+
+      let searchResults = await LegislationService.searchLegislation(failSafeQuery);
+
+      // Fallback: Se não encontrar nada com a busca exata (AND), tenta busca ampla (OR)
+      if (!searchResults || searchResults.length === 0) {
+        console.log("⚠️ RAG: Busca exata falhou. Tentando busca ampla (OR)...");
+        const broadQuery = failSafeQuery.split(' ').join(' | ');
+        searchResults = await LegislationService.searchLegislation(broadQuery);
+      }
+
+      if (searchResults && searchResults.length > 0) {
+        ragContext = `\n\n--- INFORMAÇÃO LEGISLATIVA RECUPERADA (RAG) ---\n` +
+          searchResults.map(r => `>>> LEI: ${r.name} (${r.category})\nTRECHO RELEVANTE:\n${r.extracted_text}\n<<<`).join('\n\n') +
+          `\n--- FIM DA INFORMAÇÃO LEGISLATIVA ---\n\nUse essas informações acima para responder, se aplicável.\n`;
+
+        console.log(`🔍 RAG Encontrou ${searchResults.length} trechos para: "${failSafeQuery}"`);
+      } else {
+        console.log(`⚠️ RAG não encontrou nada para: "${failSafeQuery}"`);
+      }
+    } catch (err) {
+      console.warn("Erro no RAG:", err);
+    }
   }
-  */
+
+  const finalMessage = ragContext + newMessage;
+  // ----------------------------------------------
 
   const createChat = (model: string) => {
     const validHistory = history.filter(h => h.text && h.text.trim().length > 0).map(h => ({
@@ -171,7 +218,7 @@ export const streamChatResponse = async (
           const attParts = attachments.map(att => ({ inlineData: { mimeType: att.mimeType, data: att.data } }));
           msgParts = [...msgParts, ...attParts];
         }
-        msgParts.push({ text: newMessage });
+        msgParts.push({ text: finalMessage });
         return await retryWithBackoff(() => chat.sendMessageStream({ message: msgParts as any }));
       })();
 

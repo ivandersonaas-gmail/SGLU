@@ -1,0 +1,6 @@
+🔍 Checking 'legislation_files' table...
+✅ Found 4 laws.
+- [✅ CACHED] Plano diretor (PLANO_DIRETOR) | Text Length: 198447 chars
+- [✅ CACHED] Código de Obra (CODIGO_OBRAS) | Text Length: 30389 chars
+- [✅ CACHED] Anexo13A (ANEXO) | Text Length: 1828 chars
+- [✅ CACHED] Anexo 11 (ANEXO) | Text Length: 1914 chars

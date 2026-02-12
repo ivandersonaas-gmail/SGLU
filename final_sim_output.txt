@@ -1,0 +1,4 @@
+🌐 Simulating Browser RAG Request (ANON KEY)...
+Input: "qual artigo fala do prisma de ventilação" -> Otimizada: "artigo do prisma de ventilação"
+✅ BROWSER SIMULATION SUCCESS! Found 1 results.
+First result: Código de Obra

@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { PersonType, UserProfile, LegislationFile, ProjectParameters, ProcessHistory, DocumentTemplate, TourScene } from '../types';
+import { PdfService } from './pdf';
 
 // ⚠️ CONFIGURE SUAS CHAVES NO ARQUIVO .env.local ⚠️
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -203,15 +204,49 @@ export const ProcessService = {
         const { error: uploadError } = await supabase.storage.from('process-docs').upload(fileName, file, { cacheControl: '3600', upsert: false });
         if (uploadError) throw formatError(uploadError, "Upload Storage");
 
+
         const { data: urlData } = supabase.storage.from('process-docs').getPublicUrl(fileName);
 
-        const { data, error: dbError } = await supabase.from('documents').insert([{
-            process_id: processId, name: file.name, file_url: urlData.publicUrl, file_type: docType,
-        }]).select().single();
+        // EXTRAÇÃO DE TEXTO (TURBO CACHE)
+        let extractedText = "";
+        try {
+            if (file.type === 'application/pdf') {
+                const base64 = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+                if (base64) extractedText = await PdfService.extractTextFromBase64(base64);
+            }
+        } catch (e) {
+            console.warn("Falha na extração de texto automática (não crítico):", e);
+        }
+
+        // TENTATIVA 1: Salvar com texto (Se a coluna existir)
+        const payloadWithText = {
+            process_id: processId, name: file.name, file_url: urlData.publicUrl, file_type: docType, extracted_text: extractedText
+        };
+
+        let dbError;
+        let data;
+
+        const attempt1 = await supabase.from('documents').insert([payloadWithText]).select().single();
+
+        if (attempt1.error && attempt1.error.code === 'PGRST204') { // Coluna não existe
+            // TENTATIVA 2: Fallback (Sem texto)
+            console.warn("Coluna 'extracted_text' não existe. Salvando sem cache.");
+            const payloadFallback = { process_id: processId, name: file.name, file_url: urlData.publicUrl, file_type: docType };
+            const attempt2 = await supabase.from('documents').insert([payloadFallback]).select().single();
+            data = attempt2.data;
+            dbError = attempt2.error;
+        } else {
+            data = attempt1.data;
+            dbError = attempt1.error;
+        }
 
         if (dbError) throw formatError(dbError, "Salvar Documento");
 
-        await logHistory(processId, `Upload de Documento: ${docType}`);
+        await logHistory(processId, `Upload de Documento (${extractedText ? 'Com Leitura' : 'Sem Leitura'}): ${docType}`);
         return data;
     },
 
@@ -313,10 +348,38 @@ export const LegislationService = {
 
         const { data: url } = supabase.storage.from('process-docs').getPublicUrl(fileName);
 
-        const { error } = await supabase.from('legislation_files').insert([{
-            name, category, description, file_url: url.publicUrl
-        }]);
-        if (error) throw formatError(error, "Salvar Lei");
+        // EXTRAÇÃO DE LEI (TURBO CACHE)
+        let extractedText = "";
+        try {
+            if (file.type === 'application/pdf') {
+                const base64 = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+                if (base64) extractedText = await PdfService.extractTextFromBase64(base64);
+            }
+        } catch (e) { console.warn("Falha leitura lei:", e); }
+
+        // TENTATIVA 1: Com texto
+        const payload = {
+            name, category, description, file_url: url.publicUrl, extracted_text: extractedText
+        };
+
+        const attempt1 = await supabase.from('legislation_files').insert([payload]);
+
+        if (attempt1.error) {
+            // TENTATIVA 2: Sem texto (Fallback)
+            if (attempt1.error.code === 'PGRST204' || attempt1.error.message.includes('column')) {
+                console.warn("DB sem suporte a texto. Usando modo legado.");
+                const { error: err2 } = await supabase.from('legislation_files').insert([{
+                    name, category, description, file_url: url.publicUrl
+                }]);
+                if (err2) throw formatError(err2, "Salvar Lei (Fallback)");
+            } else {
+                throw formatError(attempt1.error, "Salvar Lei");
+            }
+        }
     },
 
     async listLaws() {
@@ -338,6 +401,27 @@ export const LegislationService = {
 
         const { error } = await supabase.from('legislation_files').delete().eq('id', id);
         if (error) throw formatError(error, "Deletar Lei");
+    },
+
+    async searchLegislation(query: string) {
+        // Busca textual usando o índice criado no banco (RAG)
+        if (!query || query.trim().length < 3) return [];
+
+        const { data, error } = await supabase
+            .from('legislation_files')
+            .select('name, category, extracted_text')
+            .textSearch('extracted_text', query, {
+                type: 'websearch',
+                config: 'portuguese'
+            })
+            .limit(5);
+
+        if (error) {
+            console.warn("Falha na busca RAG:", error);
+            return [];
+        }
+
+        return data as { name: string, category: string, extracted_text: string }[];
     }
 };
 
