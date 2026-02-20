@@ -494,291 +494,299 @@ export const ProcessDetails: React.FC<ProcessDetailsProps> = ({ processId, onClo
     if (!processId) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={onClose} />
-            <div className="bg-slate-900 w-full sm:w-[90%] md:w-[900px] h-[95vh] sm:h-[90vh] sm:rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto flex flex-col overflow-hidden relative">
-                <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950/50">
-                    <div className="flex items-center gap-3"><div className="bg-blue-600/20 text-blue-400 p-2 rounded-lg"><FileText size={20} /></div><div><h2 className="font-bold text-white text-lg">Processo #{process?.protocol_number}</h2><p className="text-xs text-slate-500 uppercase font-medium">{process?.type}</p></div></div>
-                    <div className="flex items-center gap-2">
-                        {/* BOTÃO DE AUDITORIA DIRETA - CORREÇÃO DE FLUXO */}
-                        {onOpenChat && (
-                            <Tooltip text="Ir para o Chat com o Auditor IA">
-                                <button
-                                    onClick={handleStartAiAudit}
-                                    className="flex items-center gap-2 px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-amber-900/20 transition-all mr-2"
-                                >
-                                    <Search size={16} /> AUDITAR COM IA
-                                </button>
-                            </Tooltip>
-                        )}
-
-                        {(isAnalystOrAdmin) && process && process.status === 'FINALIZADO' && (
-                            <Tooltip text="Gerar PDF Oficial"><button onClick={handlePrint} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg"><Printer size={16} /> Emitir Doc</button></Tooltip>
-                        )}
-                        <Tooltip text="Fechar Janela"><button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400"><X size={20} /></button></Tooltip></div>
+        // Full Screen Layout Update
+        <div className="w-full h-full bg-slate-950 flex flex-col relative animate-in fade-in duration-300">
+            {/* Header */}
+            <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                    <Tooltip text="Voltar para Dashboard">
+                        <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 mr-2 border border-slate-700">
+                            <ArrowLeft size={20} />
+                        </button>
+                    </Tooltip>
+                    <div className="bg-blue-600/20 text-blue-400 p-2 rounded-lg"><FileText size={20} /></div>
+                    <div><h2 className="font-bold text-white text-lg">Processo #{process?.protocol_number}</h2><p className="text-xs text-slate-500 uppercase font-medium">{process?.type}</p></div>
                 </div>
+                <div className="flex items-center gap-2">
+                    {/* BOTÃO DE AUDITORIA DIRETA - CORREÇÃO DE FLUXO */}
+                    {onOpenChat && (
+                        <Tooltip text="Ir para o Chat com o Auditor IA">
+                            <button
+                                onClick={handleStartAiAudit}
+                                className="flex items-center gap-2 px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-amber-900/20 transition-all mr-2"
+                            >
+                                <Search size={16} /> AUDITAR COM IA
+                            </button>
+                        </Tooltip>
+                    )}
 
-                {/* Resto do componente mantido... */}
-                <div className="flex border-b border-slate-800 px-6 bg-slate-950/30 overflow-x-auto">
-                    {['INFO', 'DOCS', 'AUDIT', 'GEO', 'HISTORY'].map(tab => (
-                        <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>{tab === 'INFO' ? 'Resumo' : tab === 'DOCS' ? 'Documentos' : tab === 'AUDIT' ? 'Auditoria Técnica' : tab === 'GEO' ? 'Geo-Análise' : 'Histórico'}</button>
-                    ))}
-                    <button onClick={() => setActiveTab('TOUR')} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'TOUR' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>Vistoria 360º</button>
-                </div>
+                    {(isAnalystOrAdmin) && process && process.status === 'FINALIZADO' && (
+                        <Tooltip text="Gerar PDF Oficial"><button onClick={handlePrint} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg"><Printer size={16} /> Emitir Doc</button></Tooltip>
+                    )}
+                    <Tooltip text="Fechar Detalhes"><button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400"><X size={20} /></button></Tooltip></div>
+            </div>
 
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-950/30">
-                    {loading ? <div className="flex justify-center"><Loader2 className="animate-spin text-blue-500" size={32} /></div> : (
-                        <>
-                            {activeTab === 'INFO' && (
-                                <div className="space-y-6">
-                                    {/* ... (Conteúdo da aba INFO mantido) ... */}
-                                    <div className={`border rounded-xl p-4 flex justify-between items-center ${currentStatus === 'AGUARDANDO_ASSINATURA' ? 'bg-purple-900/20 border-purple-800' : currentStatus === 'PENDENTE_DOC' ? 'bg-amber-900/20 border-amber-800' : currentStatus === 'FINALIZADO' ? 'bg-emerald-900/20 border-emerald-800' : 'bg-slate-900 border-slate-800'}`}>
-                                        <div><p className="text-xs text-slate-500 uppercase font-bold mb-1">Status Atual</p><span className={`px-3 py-1 rounded-full text-sm font-bold border ${currentStatus === 'AGUARDANDO_ASSINATURA' ? 'bg-purple-600 text-white border-purple-500' : currentStatus === 'PENDENTE_DOC' ? 'bg-amber-600 text-white border-amber-500' : currentStatus === 'FINALIZADO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>{currentStatus?.replace(/_/g, ' ')}</span></div>
-                                        {isAnalystOrAdmin && !isTransferMode && process?.analyst_id && !isFinalized && (<button onClick={handleLoadAnalysts} className="text-xs text-blue-400 hover:underline bg-slate-900 px-3 py-1 rounded border border-slate-800">Transferir Responsabilidade</button>)}
-                                        {isTransferMode && (<div className="flex items-center gap-2 bg-slate-800 p-1 rounded"><select onChange={(e) => handleTransfer(e.target.value)} className="bg-slate-900 text-xs text-white p-1 rounded"><option>Selecione...</option>{analysts.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</select><button onClick={() => setIsTransferMode(false)}><X size={14} /></button></div>)}
-                                    </div>
+            {/* Resto do componente mantido... */}
+            <div className="flex border-b border-slate-800 px-6 bg-slate-950/30 overflow-x-auto">
+                {['INFO', 'DOCS', 'AUDIT', 'GEO', 'HISTORY'].map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>{tab === 'INFO' ? 'Resumo' : tab === 'DOCS' ? 'Documentos' : tab === 'AUDIT' ? 'Auditoria Técnica' : tab === 'GEO' ? 'Geo-Análise' : 'Histórico'}</button>
+                ))}
+                <button onClick={() => setActiveTab('TOUR')} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'TOUR' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>Vistoria 360º</button>
+            </div>
 
-                                    {(isAnalystOrAdmin && isAssignedToMe && !isPendingSignature && !isFinalized) && (
-                                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                                            <h3 className="text-sm font-bold text-white mb-3 flex gap-2 items-center"><Gavel size={16} className="text-blue-500" /> Parecer Técnico do Analista</h3>
-                                            <textarea value={decisionNote} onChange={e => setDecisionNote(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-sm text-slate-200 mb-4 outline-none focus:border-blue-500 transition-colors" rows={4} placeholder="Escreva seu parecer técnico..." />
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                <Tooltip text="Solicitar Correção"><button onClick={() => handleUpdateStatus('PENDENTE_DOC')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 border border-amber-800/50 rounded-lg text-xs font-bold transition-all"><AlertTriangle size={16} /> Solicitar Correção</button></Tooltip>
-                                                <Tooltip text="Aguardar Licença"><button onClick={() => handleUpdateStatus('ANUENCIA_EMITIDA')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-800/50 rounded-lg text-xs font-bold transition-all"><Clock size={16} /> Aguardar Licença Amb.</button></Tooltip>
-                                                <Tooltip text="Encaminhar Assinatura"><button onClick={() => handleUpdateStatus('AGUARDANDO_ASSINATURA')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-purple-900/20 transition-all"><SendHorizontal size={16} /> Encaminhar p/ Assinatura</button></Tooltip>
-                                            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-950/30">
+                {loading ? <div className="flex justify-center"><Loader2 className="animate-spin text-blue-500" size={32} /></div> : (
+                    <>
+                        {activeTab === 'INFO' && (
+                            <div className="space-y-6">
+                                {/* ... (Conteúdo da aba INFO mantido) ... */}
+                                <div className={`border rounded-xl p-4 flex justify-between items-center ${currentStatus === 'AGUARDANDO_ASSINATURA' ? 'bg-purple-900/20 border-purple-800' : currentStatus === 'PENDENTE_DOC' ? 'bg-amber-900/20 border-amber-800' : currentStatus === 'FINALIZADO' ? 'bg-emerald-900/20 border-emerald-800' : 'bg-slate-900 border-slate-800'}`}>
+                                    <div><p className="text-xs text-slate-500 uppercase font-bold mb-1">Status Atual</p><span className={`px-3 py-1 rounded-full text-sm font-bold border ${currentStatus === 'AGUARDANDO_ASSINATURA' ? 'bg-purple-600 text-white border-purple-500' : currentStatus === 'PENDENTE_DOC' ? 'bg-amber-600 text-white border-amber-500' : currentStatus === 'FINALIZADO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>{currentStatus?.replace(/_/g, ' ')}</span></div>
+                                    {isAnalystOrAdmin && !isTransferMode && process?.analyst_id && !isFinalized && (<button onClick={handleLoadAnalysts} className="text-xs text-blue-400 hover:underline bg-slate-900 px-3 py-1 rounded border border-slate-800">Transferir Responsabilidade</button>)}
+                                    {isTransferMode && (<div className="flex items-center gap-2 bg-slate-800 p-1 rounded"><select onChange={(e) => handleTransfer(e.target.value)} className="bg-slate-900 text-xs text-white p-1 rounded"><option>Selecione...</option>{analysts.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</select><button onClick={() => setIsTransferMode(false)}><X size={14} /></button></div>)}
+                                </div>
+
+                                {(isAnalystOrAdmin && isAssignedToMe && !isPendingSignature && !isFinalized) && (
+                                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                                        <h3 className="text-sm font-bold text-white mb-3 flex gap-2 items-center"><Gavel size={16} className="text-blue-500" /> Parecer Técnico do Analista</h3>
+                                        <textarea value={decisionNote} onChange={e => setDecisionNote(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-sm text-slate-200 mb-4 outline-none focus:border-blue-500 transition-colors" rows={4} placeholder="Escreva seu parecer técnico..." />
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <Tooltip text="Solicitar Correção"><button onClick={() => handleUpdateStatus('PENDENTE_DOC')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 border border-amber-800/50 rounded-lg text-xs font-bold transition-all"><AlertTriangle size={16} /> Solicitar Correção</button></Tooltip>
+                                            <Tooltip text="Aguardar Licença"><button onClick={() => handleUpdateStatus('ANUENCIA_EMITIDA')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-800/50 rounded-lg text-xs font-bold transition-all"><Clock size={16} /> Aguardar Licença Amb.</button></Tooltip>
+                                            <Tooltip text="Encaminhar Assinatura"><button onClick={() => handleUpdateStatus('AGUARDANDO_ASSINATURA')} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-purple-900/20 transition-all"><SendHorizontal size={16} /> Encaminhar p/ Assinatura</button></Tooltip>
                                         </div>
-                                    )}
+                                    </div>
+                                )}
 
-                                    {(isAdmin && isPendingSignature) && (
-                                        <div className="bg-purple-900/10 border border-purple-800 rounded-xl p-5 shadow-lg relative overflow-hidden">
-                                            <h3 className="text-sm font-bold text-purple-300 mb-3 flex gap-2 items-center relative z-10"><PenTool size={16} /> Área de Assinatura (Secretário)</h3>
-                                            <div className="bg-slate-950/50 p-4 rounded border border-purple-900/30 mb-4 text-sm text-slate-300 italic relative z-10"><span className="text-purple-400 font-bold not-italic text-xs uppercase block mb-1">Parecer do Analista:</span>"{process?.technical_notes || 'Sem notas.'}"</div>
-                                            <textarea value={decisionNote} onChange={e => setDecisionNote(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-sm text-slate-200 mb-4 outline-none focus:border-purple-500 transition-colors relative z-10" rows={2} placeholder="Observações finais..." />
-                                            <div className="flex gap-3 relative z-10">
-                                                <Tooltip text="Devolver"><button onClick={() => handleUpdateStatus('EM_ANALISE')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-800/50 rounded-lg text-xs font-bold transition-all"><Undo2 size={16} /> Devolver para Ajustes</button></Tooltip>
-                                                <Tooltip text="Finalizar"><button onClick={() => handleUpdateStatus('FINALIZADO')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-900/20 transition-all"><CheckCircle2 size={16} /> Assinar e Finalizar</button></Tooltip>
-                                            </div>
+                                {(isAdmin && isPendingSignature) && (
+                                    <div className="bg-purple-900/10 border border-purple-800 rounded-xl p-5 shadow-lg relative overflow-hidden">
+                                        <h3 className="text-sm font-bold text-purple-300 mb-3 flex gap-2 items-center relative z-10"><PenTool size={16} /> Área de Assinatura (Secretário)</h3>
+                                        <div className="bg-slate-950/50 p-4 rounded border border-purple-900/30 mb-4 text-sm text-slate-300 italic relative z-10"><span className="text-purple-400 font-bold not-italic text-xs uppercase block mb-1">Parecer do Analista:</span>"{process?.technical_notes || 'Sem notas.'}"</div>
+                                        <textarea value={decisionNote} onChange={e => setDecisionNote(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-sm text-slate-200 mb-4 outline-none focus:border-purple-500 transition-colors relative z-10" rows={2} placeholder="Observações finais..." />
+                                        <div className="flex gap-3 relative z-10">
+                                            <Tooltip text="Devolver"><button onClick={() => handleUpdateStatus('EM_ANALISE')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-800/50 rounded-lg text-xs font-bold transition-all"><Undo2 size={16} /> Devolver para Ajustes</button></Tooltip>
+                                            <Tooltip text="Finalizar"><button onClick={() => handleUpdateStatus('FINALIZADO')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-900/20 transition-all"><CheckCircle2 size={16} /> Assinar e Finalizar</button></Tooltip>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'DOCS' && (
+                            <div className="space-y-4">
+                                {/* BOTÃO DE UPLOAD REINSERIDO AQUI */}
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-slate-300">Anexos do Processo</h3>
+                                    {canEdit && (
+                                        <div className="relative">
+                                            <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={uploading} />
+                                            <button disabled={uploading} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">
+                                                {uploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                                                Adicionar Documento
+                                            </button>
                                         </div>
                                     )}
                                 </div>
-                            )}
 
-                            {activeTab === 'DOCS' && (
-                                <div className="space-y-4">
-                                    {/* BOTÃO DE UPLOAD REINSERIDO AQUI */}
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="font-bold text-slate-300">Anexos do Processo</h3>
-                                        {canEdit && (
-                                            <div className="relative">
-                                                <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={uploading} />
-                                                <button disabled={uploading} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">
-                                                    {uploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-                                                    Adicionar Documento
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {documents.map(doc => (
-                                        <div key={doc.id} className="flex justify-between items-center p-3 bg-slate-900 border border-slate-800 rounded-lg hover:border-slate-700">
-                                            <div className="flex gap-3 items-center overflow-hidden"><FileText size={20} className="text-slate-500 shrink-0" /><div className="min-w-0"><p className="text-sm text-slate-200 truncate">{doc.name}</p><span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 uppercase">{doc.file_type}</span></div></div>
-                                            <div className="flex items-center gap-1">
-                                                <a href={doc.file_url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-blue-400"><Eye size={18} /></a>
-                                                {canDeleteDocs && (<Tooltip text="Excluir"><button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id, doc.file_url); }} className="p-2 text-red-500/50 hover:text-red-400 hover:bg-red-900/10 rounded transition-colors"><Trash2 size={18} /></button></Tooltip>)}
-                                            </div>
+                                {documents.map(doc => (
+                                    <div key={doc.id} className="flex justify-between items-center p-3 bg-slate-900 border border-slate-800 rounded-lg hover:border-slate-700">
+                                        <div className="flex gap-3 items-center overflow-hidden"><FileText size={20} className="text-slate-500 shrink-0" /><div className="min-w-0"><p className="text-sm text-slate-200 truncate">{doc.name}</p><span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 uppercase">{doc.file_type}</span></div></div>
+                                        <div className="flex items-center gap-1">
+                                            <a href={doc.file_url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-blue-400"><Eye size={18} /></a>
+                                            {canDeleteDocs && (<Tooltip text="Excluir"><button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id, doc.file_url); }} className="p-2 text-red-500/50 hover:text-red-400 hover:bg-red-900/10 rounded transition-colors"><Trash2 size={18} /></button></Tooltip>)}
                                         </div>
-                                    ))}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'GEO' && (
+                            <MapViewer
+                                zone={auditParams?.zona_uso}
+                                area={auditParams?.area_terreno}
+                                address={process?.address_work}
+                            />
+                        )}
+
+                        {/* AUDIT TAB and TOUR TAB content remains the same */}
+                        {activeTab === 'AUDIT' && (
+                            <div className="space-y-6 h-full flex flex-col">
+                                <div className="flex items-center justify-between mb-2 px-2">
+                                    <div className="flex items-center gap-1 w-full">
+                                        {[1, 2, 3, 4].map(step => {
+                                            if (isHabiteSe && step === 4) return null;
+                                            return (<button type="button" key={step} onClick={() => setWizardStep(step)} className={`flex-1 h-2 rounded-full mx-1 cursor-pointer hover:opacity-80 transition-all outline-none focus:ring-2 focus:ring-blue-500/50 ${wizardStep >= step ? 'bg-blue-600' : 'bg-slate-800'}`} title={`Ir para etapa ${step}`} />);
+                                        })}
+                                    </div>
                                 </div>
-                            )}
+                                <div className="flex justify-between px-2 text-[10px] font-bold text-slate-500 uppercase mb-4"><span>1. Preliminar</span><span>2. Documentos</span><span>{isHabiteSe ? '3. Cruzamento' : '3. Técnico/Eng'}</span>{!isHabiteSe && <span>4. Resp. Técnica</span>}</div>
 
-                            {activeTab === 'GEO' && (
-                                <MapViewer
-                                    zone={auditParams?.zona_uso}
-                                    area={auditParams?.area_terreno}
-                                    address={process?.address_work}
-                                />
-                            )}
-
-                            {/* AUDIT TAB and TOUR TAB content remains the same */}
-                            {activeTab === 'AUDIT' && (
-                                <div className="space-y-6 h-full flex flex-col">
-                                    <div className="flex items-center justify-between mb-2 px-2">
-                                        <div className="flex items-center gap-1 w-full">
-                                            {[1, 2, 3, 4].map(step => {
-                                                if (isHabiteSe && step === 4) return null;
-                                                return (<button type="button" key={step} onClick={() => setWizardStep(step)} className={`flex-1 h-2 rounded-full mx-1 cursor-pointer hover:opacity-80 transition-all outline-none focus:ring-2 focus:ring-blue-500/50 ${wizardStep >= step ? 'bg-blue-600' : 'bg-slate-800'}`} title={`Ir para etapa ${step}`} />);
-                                            })}
-                                        </div>
+                                {/* PROMOÇÃO DO NOVO COCKPIT - VISÍVEL SEMPRE */}
+                                <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 rounded-xl p-4 mb-6 flex items-center justify-between relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
+                                    <div className="relative z-10">
+                                        <h3 className="text-base font-bold text-white mb-1 flex items-center gap-2"><Zap size={18} className="text-amber-400 fill-amber-400" /> Disponível: Cockpit de Auditoria 3.0</h3>
+                                        <p className="text-xs text-blue-200">Experimente a nova interface imersiva de análise com Inteligência Artificial em tela cheia.</p>
                                     </div>
-                                    <div className="flex justify-between px-2 text-[10px] font-bold text-slate-500 uppercase mb-4"><span>1. Preliminar</span><span>2. Documentos</span><span>{isHabiteSe ? '3. Cruzamento' : '3. Técnico/Eng'}</span>{!isHabiteSe && <span>4. Resp. Técnica</span>}</div>
+                                    <button onClick={handleStartAiAudit} className="relative z-10 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 transition-transform transform hover:scale-105">
+                                        <Scale size={18} />
+                                        <span className="hidden sm:inline">Auditar com IA</span>
+                                    </button>
+                                </div>
 
-                                    {/* PROMOÇÃO DO NOVO COCKPIT - VISÍVEL SEMPRE */}
-                                    <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 rounded-xl p-4 mb-6 flex items-center justify-between relative overflow-hidden group">
-                                        <div className="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
-                                        <div className="relative z-10">
-                                            <h3 className="text-base font-bold text-white mb-1 flex items-center gap-2"><Zap size={18} className="text-amber-400 fill-amber-400" /> Disponível: Cockpit de Auditoria 3.0</h3>
-                                            <p className="text-xs text-blue-200">Experimente a nova interface imersiva de análise com Inteligência Artificial em tela cheia.</p>
+                                {/* AI CHECKLIST SECTION - INJECTED AS REQUESTED */}
+                                {auditParams?.audit_json?.cockpit && (
+                                    <div className="bg-slate-950 border border-slate-700 rounded-xl p-4 mb-6 shadow-lg">
+                                        <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                                            <h3 className="text-base font-bold text-emerald-400 flex items-center gap-2">
+                                                <Bot size={20} /> Análise da IA (Sugestões)
+                                            </h3>
+                                            <span className="text-xs text-slate-500">Dados importados do Chat</span>
                                         </div>
-                                        <button onClick={handleStartAiAudit} className="relative z-10 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 transition-transform transform hover:scale-105">
-                                            <Scale size={18} />
-                                            <span className="hidden sm:inline">Auditar com IA</span>
-                                        </button>
-                                    </div>
 
-                                    {/* AI CHECKLIST SECTION - INJECTED AS REQUESTED */}
-                                    {auditParams?.audit_json?.cockpit && (
-                                        <div className="bg-slate-950 border border-slate-700 rounded-xl p-4 mb-6 shadow-lg">
-                                            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
-                                                <h3 className="text-base font-bold text-emerald-400 flex items-center gap-2">
-                                                    <Bot size={20} /> Análise da IA (Sugestões)
-                                                </h3>
-                                                <span className="text-xs text-slate-500">Dados importados do Chat</span>
-                                            </div>
-
-                                            <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                                                {(auditParams.audit_json.cockpit as any).sections?.map((section: any, sIdx: number) => (
-                                                    <div key={sIdx} className="border border-slate-800 rounded p-3 bg-slate-900/50">
-                                                        <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">{section.title}</h4>
-                                                        <div className="space-y-2">
-                                                            {section.items?.map((item: any, iIdx: number) => (
-                                                                <div key={iIdx} className="flex gap-2 items-start text-xs border-b border-slate-800/50 pb-2 last:border-0">
-                                                                    <div className={`mt-0.5 shrink-0 ${item.status === 'ok' ? 'text-emerald-500' : item.status === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
-                                                                        {item.status === 'ok' ? <CheckCircle2 size={14} /> : item.status === 'error' ? <XCircle size={14} /> : <AlertTriangle size={14} />}
-                                                                    </div>
-                                                                    <div className="flex-1">
-                                                                        <p className="text-slate-300">{item.text}</p>
-                                                                        {item.comment && <p className="text-slate-500 italic mt-0.5">Obs: "{item.comment}"</p>}
-                                                                    </div>
+                                        <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                                            {(auditParams.audit_json.cockpit as any).sections?.map((section: any, sIdx: number) => (
+                                                <div key={sIdx} className="border border-slate-800 rounded p-3 bg-slate-900/50">
+                                                    <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">{section.title}</h4>
+                                                    <div className="space-y-2">
+                                                        {section.items?.map((item: any, iIdx: number) => (
+                                                            <div key={iIdx} className="flex gap-2 items-start text-xs border-b border-slate-800/50 pb-2 last:border-0">
+                                                                <div className={`mt-0.5 shrink-0 ${item.status === 'ok' ? 'text-emerald-500' : item.status === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+                                                                    {item.status === 'ok' ? <CheckCircle2 size={14} /> : item.status === 'error' ? <XCircle size={14} /> : <AlertTriangle size={14} />}
                                                                 </div>
-                                                            ))}
-                                                        </div>
+                                                                <div className="flex-1">
+                                                                    <p className="text-slate-300">{item.text}</p>
+                                                                    {item.comment && <p className="text-slate-500 italic mt-0.5">Obs: "{item.comment}"</p>}
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!auditParams?.ai_validation_summary && wizardStep === 1 && (
+                                    <div className="text-center py-8"><ShieldCheck className="mx-auto text-slate-600 mb-4" size={48} /><h3 className="text-lg font-bold text-slate-300 mb-2">Auditoria Formal Não Iniciada</h3>{canEdit ? (<button onClick={handleStartManualAudit} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 mx-auto"><Edit2 size={16} /> Iniciar Manualmente</button>) : (<div className="mt-2 bg-amber-900/20 text-amber-400 p-3 rounded border border-amber-800/50 text-sm inline-block">Aguardando início da auditoria pelo Licenciamento.</div>)}</div>
+                                )}
+
+                                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto shadow-inner">
+                                    {/* Wizard Steps Content (Same as previous) */}
+                                    {wizardStep === 1 && (
+                                        <div className="space-y-6 animate-in slide-in-from-right">
+                                            {/* REMOVIDO: renderEvidenceSelector() */}
+                                            <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2">1. Verificação Preliminar</h4>
+                                            <div className="bg-slate-950 p-4 rounded border border-slate-800">
+                                                <p className="text-sm font-medium text-slate-300 mb-2">Consulta no 1Doc Realizada?</p>
+                                                <div className="flex gap-4 mb-2"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="1doc" checked={auditParams?.audit_json?.preliminary_data?.one_doc_status === 'SIM'} onChange={() => updateAuditJson('preliminary_data', 'one_doc_status', 'SIM', true)} disabled={!canEdit} /><span className="text-sm text-slate-400">Sim (OK)</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="1doc" checked={auditParams?.audit_json?.preliminary_data?.one_doc_status === 'NAO'} onChange={() => updateAuditJson('preliminary_data', 'one_doc_status', 'NAO', true)} disabled={!canEdit} /><span className="text-sm text-slate-400">Não</span></label></div>
+                                                {auditParams?.audit_json?.preliminary_data?.one_doc_status === 'NAO' && (<textarea value={auditParams?.audit_json?.preliminary_data?.one_doc_obs || ''} onChange={e => updateAuditJson('preliminary_data', 'one_doc_obs', e.target.value, false)} onBlur={e => updateAuditJson('preliminary_data', 'one_doc_obs', e.target.value, true)} placeholder="Observação obrigatória..." className="w-full bg-amber-900/10 border border-amber-800/50 text-amber-200 text-xs p-2 rounded outline-none" disabled={!canEdit} />)}
+                                            </div>
+                                            <div className="bg-slate-950 p-4 rounded border border-slate-800">
+                                                <div className="flex justify-between"><p className="text-sm font-medium text-slate-300 mb-2">Tem Licença Ambiental?</p>{auditParams?.audit_json?.preliminary_data?.env_license_ai_proof && (<Tooltip text={auditParams.audit_json.preliminary_data.env_license_ai_proof}><Eye size={16} className="text-blue-500 cursor-help" /></Tooltip>)}</div>
+                                                <div className="flex gap-4"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="env" checked={auditParams?.audit_json?.preliminary_data?.env_license_status === 'SIM'} onChange={() => updateAuditJson('preliminary_data', 'env_license_status', 'SIM', true)} disabled={!canEdit} /><span className="text-sm text-emerald-400">Sim</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="env" checked={auditParams?.audit_json?.preliminary_data?.env_license_status === 'NAO'} onChange={() => updateAuditJson('preliminary_data', 'env_license_status', 'NAO', true)} disabled={!canEdit} /><span className="text-sm text-red-400">Não</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="env" checked={auditParams?.audit_json?.preliminary_data?.env_license_status === 'NA'} onChange={() => updateAuditJson('preliminary_data', 'env_license_status', 'NA', true)} disabled={!canEdit} /><span className="text-sm text-slate-400">Não se Aplica</span></label></div>
+                                                {auditParams?.audit_json?.preliminary_data?.env_license_status === 'NAO' && <div className="mt-2 bg-amber-900/20 border border-amber-800 text-amber-400 text-xs p-2 rounded flex items-center gap-2"><AlertTriangle size={14} /> Necessário solicitar Anuência Ambiental.</div>}
                                             </div>
                                         </div>
                                     )}
 
-                                    {!auditParams?.ai_validation_summary && wizardStep === 1 && (
-                                        <div className="text-center py-8"><ShieldCheck className="mx-auto text-slate-600 mb-4" size={48} /><h3 className="text-lg font-bold text-slate-300 mb-2">Auditoria Formal Não Iniciada</h3>{canEdit ? (<button onClick={handleStartManualAudit} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 mx-auto"><Edit2 size={16} /> Iniciar Manualmente</button>) : (<div className="mt-2 bg-amber-900/20 text-amber-400 p-3 rounded border border-amber-800/50 text-sm inline-block">Aguardando início da auditoria pelo Licenciamento.</div>)}</div>
+                                    {wizardStep === 2 && (
+                                        <div className="space-y-6 animate-in slide-in-from-right">
+                                            {/* REMOVIDO: renderEvidenceSelector() */}
+                                            <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 flex items-center gap-2"><Briefcase size={16} /> 2. Documentos & Consistência</h4>
+                                            <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-slate-500 uppercase mb-3">Dados do Imóvel (Certidão/BCI)</h5><div className="grid grid-cols-3 gap-3"><div><label className="text-[10px] text-slate-600 uppercase">Quadra</label><input type="text" value={auditParams?.audit_json?.certificate_data?.quadra || ''} onChange={e => updateAuditJson('certificate_data', 'quadra', e.target.value, false)} onBlur={e => updateAuditJson('certificate_data', 'quadra', e.target.value, true)} className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none" disabled={!canEdit} /></div><div><label className="text-[10px] text-slate-600 uppercase">Lote</label><input type="text" value={auditParams?.audit_json?.certificate_data?.lote || ''} onChange={e => updateAuditJson('certificate_data', 'lote', e.target.value, false)} onBlur={e => updateAuditJson('certificate_data', 'lote', e.target.value, true)} className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none" disabled={!canEdit} /></div><div><label className="text-[10px] text-slate-600 uppercase">Matrícula</label><input type="text" value={auditParams?.audit_json?.certificate_data?.matricula || ''} onChange={e => updateAuditJson('certificate_data', 'matricula', e.target.value, false)} onBlur={e => updateAuditJson('certificate_data', 'matricula', e.target.value, true)} className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none" disabled={!canEdit} /></div></div></div>
+                                            <div className="bg-slate-950 border border-slate-800 rounded p-4"><div className="flex justify-between items-center mb-3"><h5 className="text-xs font-bold text-purple-400 uppercase">Identificação do Requerente</h5><div className="flex gap-1 text-[10px] bg-slate-900 border border-slate-800 rounded p-1"><button onClick={() => handleEntityTypeChange('PF')} className={`px-2 py-0.5 rounded ${entityType === 'PF' ? 'bg-purple-600 text-white' : 'text-slate-500'}`} disabled={!canEdit}>PF</button><button onClick={() => handleEntityTypeChange('PJ')} className={`px-2 py-0.5 rounded ${entityType === 'PJ' ? 'bg-purple-600 text-white' : 'text-slate-500'}`} disabled={!canEdit}>PJ</button></div></div><div className="space-y-1">{entityType === 'PJ' ? (<> {renderMatrixRow('entity_validation', 'Contrato Social', 'contrato_social')} {renderMatrixRow('entity_validation', 'Procuração / Doc. Representante', 'procuracao')} </>) : (<> {renderMatrixRow('entity_validation', 'Documento Pessoal (RG/CNH)', 'doc_pessoal')} {renderMatrixRow('entity_validation', 'Procuração (Se não for proprietário)', 'procuracao')} </>)}</div></div>
+                                            <div className="space-y-2"><h5 className="text-xs font-bold text-slate-500 uppercase">Checklist Documental</h5>{renderDocTable()}</div>
+                                            <div className="bg-slate-950 border border-slate-800 rounded p-4 mt-4"><h5 className="text-xs font-bold text-amber-400 uppercase mb-3 border-b border-slate-800 pb-1">Consistência de Endereço</h5>{renderComparisonRow("location_matrix", "street_compare", "Protocolo", "Escritura", "BCI")}{renderComparisonRow("location_matrix", "neighborhood_compare", "Escritura", "Projeto", "BCI")}</div>
+                                        </div>
                                     )}
 
-                                    <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto shadow-inner">
-                                        {/* Wizard Steps Content (Same as previous) */}
-                                        {wizardStep === 1 && (
-                                            <div className="space-y-6 animate-in slide-in-from-right">
-                                                {/* REMOVIDO: renderEvidenceSelector() */}
-                                                <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2">1. Verificação Preliminar</h4>
-                                                <div className="bg-slate-950 p-4 rounded border border-slate-800">
-                                                    <p className="text-sm font-medium text-slate-300 mb-2">Consulta no 1Doc Realizada?</p>
-                                                    <div className="flex gap-4 mb-2"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="1doc" checked={auditParams?.audit_json?.preliminary_data?.one_doc_status === 'SIM'} onChange={() => updateAuditJson('preliminary_data', 'one_doc_status', 'SIM', true)} disabled={!canEdit} /><span className="text-sm text-slate-400">Sim (OK)</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="1doc" checked={auditParams?.audit_json?.preliminary_data?.one_doc_status === 'NAO'} onChange={() => updateAuditJson('preliminary_data', 'one_doc_status', 'NAO', true)} disabled={!canEdit} /><span className="text-sm text-slate-400">Não</span></label></div>
-                                                    {auditParams?.audit_json?.preliminary_data?.one_doc_status === 'NAO' && (<textarea value={auditParams?.audit_json?.preliminary_data?.one_doc_obs || ''} onChange={e => updateAuditJson('preliminary_data', 'one_doc_obs', e.target.value, false)} onBlur={e => updateAuditJson('preliminary_data', 'one_doc_obs', e.target.value, true)} placeholder="Observação obrigatória..." className="w-full bg-amber-900/10 border border-amber-800/50 text-amber-200 text-xs p-2 rounded outline-none" disabled={!canEdit} />)}
-                                                </div>
-                                                <div className="bg-slate-950 p-4 rounded border border-slate-800">
-                                                    <div className="flex justify-between"><p className="text-sm font-medium text-slate-300 mb-2">Tem Licença Ambiental?</p>{auditParams?.audit_json?.preliminary_data?.env_license_ai_proof && (<Tooltip text={auditParams.audit_json.preliminary_data.env_license_ai_proof}><Eye size={16} className="text-blue-500 cursor-help" /></Tooltip>)}</div>
-                                                    <div className="flex gap-4"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="env" checked={auditParams?.audit_json?.preliminary_data?.env_license_status === 'SIM'} onChange={() => updateAuditJson('preliminary_data', 'env_license_status', 'SIM', true)} disabled={!canEdit} /><span className="text-sm text-emerald-400">Sim</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="env" checked={auditParams?.audit_json?.preliminary_data?.env_license_status === 'NAO'} onChange={() => updateAuditJson('preliminary_data', 'env_license_status', 'NAO', true)} disabled={!canEdit} /><span className="text-sm text-red-400">Não</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="env" checked={auditParams?.audit_json?.preliminary_data?.env_license_status === 'NA'} onChange={() => updateAuditJson('preliminary_data', 'env_license_status', 'NA', true)} disabled={!canEdit} /><span className="text-sm text-slate-400">Não se Aplica</span></label></div>
-                                                    {auditParams?.audit_json?.preliminary_data?.env_license_status === 'NAO' && <div className="mt-2 bg-amber-900/20 border border-amber-800 text-amber-400 text-xs p-2 rounded flex items-center gap-2"><AlertTriangle size={14} /> Necessário solicitar Anuência Ambiental.</div>}
-                                                </div>
-                                            </div>
-                                        )}
+                                    {wizardStep === 3 && (
+                                        <div className="space-y-6 animate-in slide-in-from-right">
+                                            {/* REMOVIDO: renderEvidenceSelector() */}
 
-                                        {wizardStep === 2 && (
-                                            <div className="space-y-6 animate-in slide-in-from-right">
-                                                {/* REMOVIDO: renderEvidenceSelector() */}
-                                                <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 flex items-center gap-2"><Briefcase size={16} /> 2. Documentos & Consistência</h4>
-                                                <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-slate-500 uppercase mb-3">Dados do Imóvel (Certidão/BCI)</h5><div className="grid grid-cols-3 gap-3"><div><label className="text-[10px] text-slate-600 uppercase">Quadra</label><input type="text" value={auditParams?.audit_json?.certificate_data?.quadra || ''} onChange={e => updateAuditJson('certificate_data', 'quadra', e.target.value, false)} onBlur={e => updateAuditJson('certificate_data', 'quadra', e.target.value, true)} className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none" disabled={!canEdit} /></div><div><label className="text-[10px] text-slate-600 uppercase">Lote</label><input type="text" value={auditParams?.audit_json?.certificate_data?.lote || ''} onChange={e => updateAuditJson('certificate_data', 'lote', e.target.value, false)} onBlur={e => updateAuditJson('certificate_data', 'lote', e.target.value, true)} className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none" disabled={!canEdit} /></div><div><label className="text-[10px] text-slate-600 uppercase">Matrícula</label><input type="text" value={auditParams?.audit_json?.certificate_data?.matricula || ''} onChange={e => updateAuditJson('certificate_data', 'matricula', e.target.value, false)} onBlur={e => updateAuditJson('certificate_data', 'matricula', e.target.value, true)} className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none" disabled={!canEdit} /></div></div></div>
-                                                <div className="bg-slate-950 border border-slate-800 rounded p-4"><div className="flex justify-between items-center mb-3"><h5 className="text-xs font-bold text-purple-400 uppercase">Identificação do Requerente</h5><div className="flex gap-1 text-[10px] bg-slate-900 border border-slate-800 rounded p-1"><button onClick={() => handleEntityTypeChange('PF')} className={`px-2 py-0.5 rounded ${entityType === 'PF' ? 'bg-purple-600 text-white' : 'text-slate-500'}`} disabled={!canEdit}>PF</button><button onClick={() => handleEntityTypeChange('PJ')} className={`px-2 py-0.5 rounded ${entityType === 'PJ' ? 'bg-purple-600 text-white' : 'text-slate-500'}`} disabled={!canEdit}>PJ</button></div></div><div className="space-y-1">{entityType === 'PJ' ? (<> {renderMatrixRow('entity_validation', 'Contrato Social', 'contrato_social')} {renderMatrixRow('entity_validation', 'Procuração / Doc. Representante', 'procuracao')} </>) : (<> {renderMatrixRow('entity_validation', 'Documento Pessoal (RG/CNH)', 'doc_pessoal')} {renderMatrixRow('entity_validation', 'Procuração (Se não for proprietário)', 'procuracao')} </>)}</div></div>
-                                                <div className="space-y-2"><h5 className="text-xs font-bold text-slate-500 uppercase">Checklist Documental</h5>{renderDocTable()}</div>
-                                                <div className="bg-slate-950 border border-slate-800 rounded p-4 mt-4"><h5 className="text-xs font-bold text-amber-400 uppercase mb-3 border-b border-slate-800 pb-1">Consistência de Endereço</h5>{renderComparisonRow("location_matrix", "street_compare", "Protocolo", "Escritura", "BCI")}{renderComparisonRow("location_matrix", "neighborhood_compare", "Escritura", "Projeto", "BCI")}</div>
-                                            </div>
-                                        )}
-
-                                        {wizardStep === 3 && (
-                                            <div className="space-y-6 animate-in slide-in-from-right">
-                                                {/* REMOVIDO: renderEvidenceSelector() */}
-
-                                                {isHabiteSe ? (
-                                                    <>
-                                                        <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 mt-4 flex items-center gap-2"><ArrowRightLeft size={16} /> 3. Cruzamento de Dados & Consistência</h4>
-                                                        <div className="space-y-6">
-                                                            <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-emerald-400 uppercase mb-3 border-b border-slate-800 pb-1">A) Matriz de Titularidade (QUEM)</h5>{renderComparisonRow("titularity_matrix", "protocol_vs_deed", "Protocolo", "Escritura/Certidão")}{renderComparisonRow("titularity_matrix", "protocol_vs_project", "Protocolo", "Proprietário (Planta)")}{renderComparisonRow("titularity_matrix", "protocol_vs_art", "Protocolo", "Contratante (ART/RRT)")}</div>
-                                                            <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-blue-400 uppercase mb-3 border-b border-slate-800 pb-1">C) Matriz de Dimensões (QUANTO)</h5>{renderComparisonRow("dimension_matrix", "land_area_compare", "Escritura", "Projeto", "BCI")}{renderComparisonRow("dimension_matrix", "built_area_compare", "Projeto Aprovado", "Licença de Construção")}</div>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 mt-4 flex items-center gap-2"><Ruler size={16} /> 3. Análise Técnica & Urbanística</h4>
-                                                        <div className="bg-slate-950 p-4 rounded border border-slate-800"><h5 className="text-xs font-bold text-slate-500 uppercase mb-3">A) Zoneamento</h5><select value={auditParams?.zona_uso || ''} onChange={(e) => updateRootParam('zona_uso', e.target.value, true)} disabled={!canEdit} className={`w-full p-2 rounded text-sm font-bold outline-none border ${ZONE_STYLES[auditParams?.zona_uso || ''] || 'bg-slate-900 text-slate-400 border-slate-700'}`}><option value="" className="bg-slate-950 text-slate-400">Selecione a Zona...</option>{ZONES.map(z => <option key={z} value={z} className="bg-slate-900 text-white">{z}</option>)}</select></div>
-                                                        <div className="bg-slate-950 p-4 rounded border border-slate-800">
-                                                            <h5 className="text-xs font-bold text-blue-400 uppercase mb-3 flex items-center gap-2"><Calculator size={14} /> B) Parâmetros Urbanísticos</h5>
-                                                            <div className="grid grid-cols-3 gap-4 mb-4"><div><label className="text-[10px] text-slate-500 uppercase">Área Terreno (m²)</label><input type="number" value={areaTerreno} onChange={e => updateRootParam('area_terreno', parseFloat(e.target.value), false)} onBlur={e => updateRootParam('area_terreno', parseFloat(e.target.value), true)} disabled={!canEdit} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">Área Construída Total (m²)</label><input type="number" value={areaTotal} onChange={e => updateRootParam('area_total', parseFloat(e.target.value), false)} onBlur={e => updateRootParam('area_total', parseFloat(e.target.value), true)} disabled={!canEdit} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">Área Permeável (m²)</label><input type="number" value={areaPermeavel} onChange={e => updateRootParam('permeabilidade', parseFloat(e.target.value), false)} onBlur={e => updateRootParam('permeabilidade', parseFloat(e.target.value), true)} disabled={!canEdit} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm" /></div></div>
-                                                            <div className="grid grid-cols-2 gap-4 bg-slate-900 p-3 rounded border border-slate-800/50"><div><label className="text-[10px] text-slate-500 uppercase">Taxa de Permeabilidade (TSN)</label><div className={`text-lg font-bold ${parseFloat(tsnPercent) < 10 ? 'text-red-500' : 'text-emerald-400'}`}>{tsnPercent}%</div></div><div><label className="text-[10px] text-slate-500 uppercase">Índice de Aproveitamento (CA)</label><div className="text-lg font-bold text-blue-400">{caCalculated}</div></div></div>
-                                                        </div>
-                                                        <div className="bg-slate-950 p-4 rounded border border-slate-800"><h5 className="text-xs font-bold text-slate-400 uppercase mb-3">C) Recuos e Afastamentos</h5>{renderMatrixRow('checklist_matrix', 'Recuo Frontal', 'recuo_frontal', 'm')}{renderMatrixRow('checklist_matrix', 'Recuo de Fundos', 'recuo_fundos', 'm')}{renderMatrixRow('checklist_matrix', 'Recuos Laterais', 'recuos_laterais', 'm')}{renderMatrixRow('checklist_matrix', 'Taxa de Ocupação', 'taxa_ocupacao', '%')}</div>
-                                                        <div className="bg-slate-950 p-4 rounded border border-slate-800"><h5 className="text-xs font-bold text-purple-400 uppercase mb-3">D) Checklist de Projeto</h5>{renderMatrixRow('checklist_matrix', 'Projeto Assinado (Selo)?', 'projeto_assinado')}{renderMatrixRow('checklist_matrix', 'Medidas Conferem com Escritura?', 'medidas_conferem')}{renderMatrixRow('checklist_matrix', 'Confrontantes Conferem?', 'confrontantes_conferem')}{renderMatrixRow('checklist_matrix', 'Acessibilidade (Piso Tátil)?', 'piso_tatil')}{renderMatrixRow('checklist_matrix', 'Janelas a 1.5m da divisa?', 'janelas_vizinhanca')}{renderMatrixRow('checklist_matrix', 'Área Uso Comum (Multifamiliar)?', 'area_uso_comum')}{renderCoatingTable()}</div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {wizardStep === 4 && !isHabiteSe && (
-                                            <div className="space-y-6 animate-in slide-in-from-right">
-                                                {/* REMOVIDO: renderEvidenceSelector() */}
-                                                <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 flex items-center gap-2"><ArrowRightLeft size={16} /> 4. Responsabilidade & Consistência de Dados</h4>
-                                                <div className="space-y-6">
-                                                    <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-emerald-400 uppercase mb-3 border-b border-slate-800 pb-1">A) Matriz de Titularidade (QUEM)</h5>{renderComparisonRow("responsibility_matrix", "protocol_vs_deed", "Protocolo", "Escritura/Certidão")}{renderComparisonRow("responsibility_matrix", "protocol_vs_project", "Protocolo", "Proprietário (Planta)")}{renderComparisonRow("responsibility_matrix", "protocol_vs_art", "Protocolo", "Contratante (ART/RRT)")}</div>
-                                                    <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-amber-400 uppercase mb-3 border-b border-slate-800 pb-1">B) Matriz de Localização Detalhada (ONDE)</h5>{renderComparisonRow("responsibility_matrix", "lot_block_compare", "BCI", "Escritura", "Projeto", "Checklist")}{renderComparisonRow("responsibility_matrix", "street_compare", "BCI", "Protocolo", "Checklist", "Projeto")}{renderComparisonRow("responsibility_matrix", "neighborhood_compare", "Todas as Fontes", "Comparação", "Cruzada")}</div>
-                                                    <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-blue-400 uppercase mb-3 border-b border-slate-800 pb-1">C) Matriz de Dimensões (QUANTO)</h5>{renderComparisonRow("responsibility_matrix", "land_area_compare", "Escritura", "Projeto", "BCI")}</div>
-                                                    <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-red-400 uppercase mb-3 border-b border-slate-800 pb-1">D) Validade Documental</h5>{renderCertidaoValidity()}</div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {auditParams && (
-                                        <div className="flex justify-between pt-2">
-                                            <Tooltip text="Voltar etapa"><button onClick={prevStep} disabled={wizardStep === 1} className="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium disabled:opacity-30 flex items-center gap-2"><ArrowLeft size={16} /> Voltar</button></Tooltip>
-                                            {canEdit ? (
-                                                <Tooltip text={wizardStep === (isHabiteSe ? 3 : 4) ? "Salvar auditoria final" : "Salvar dados e ir para próxima etapa"}>
-                                                    <button onClick={nextStep} disabled={savingAudit} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-900/20 flex items-center gap-2 disabled:opacity-50">
-                                                        {savingAudit ? <Loader2 className="animate-spin" size={16} /> : wizardStep === (isHabiteSe ? 3 : 4) ? <Save size={16} /> : <ArrowRight size={16} />}
-                                                        {wizardStep === (isHabiteSe ? 3 : 4) ? 'Finalizar Auditoria' : 'Validar & Avançar'}
-                                                    </button>
-                                                </Tooltip>
+                                            {isHabiteSe ? (
+                                                <>
+                                                    <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 mt-4 flex items-center gap-2"><ArrowRightLeft size={16} /> 3. Cruzamento de Dados & Consistência</h4>
+                                                    <div className="space-y-6">
+                                                        <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-emerald-400 uppercase mb-3 border-b border-slate-800 pb-1">A) Matriz de Titularidade (QUEM)</h5>{renderComparisonRow("titularity_matrix", "protocol_vs_deed", "Protocolo", "Escritura/Certidão")}{renderComparisonRow("titularity_matrix", "protocol_vs_project", "Protocolo", "Proprietário (Planta)")}{renderComparisonRow("titularity_matrix", "protocol_vs_art", "Protocolo", "Contratante (ART/RRT)")}</div>
+                                                        <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-blue-400 uppercase mb-3 border-b border-slate-800 pb-1">C) Matriz de Dimensões (QUANTO)</h5>{renderComparisonRow("dimension_matrix", "land_area_compare", "Escritura", "Projeto", "BCI")}{renderComparisonRow("dimension_matrix", "built_area_compare", "Projeto Aprovado", "Licença de Construção")}</div>
+                                                    </div>
+                                                </>
                                             ) : (
-                                                <Tooltip text="Apenas visualizar próxima etapa"><button onClick={() => setWizardStep(s => Math.min((isHabiteSe ? 3 : 4), s + 1))} disabled={wizardStep === (isHabiteSe ? 3 : 4)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50">Próximo (Visualizar) <ArrowRight size={16} /></button></Tooltip>
+                                                <>
+                                                    <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 mt-4 flex items-center gap-2"><Ruler size={16} /> 3. Análise Técnica & Urbanística</h4>
+                                                    <div className="bg-slate-950 p-4 rounded border border-slate-800"><h5 className="text-xs font-bold text-slate-500 uppercase mb-3">A) Zoneamento</h5><select value={auditParams?.zona_uso || ''} onChange={(e) => updateRootParam('zona_uso', e.target.value, true)} disabled={!canEdit} className={`w-full p-2 rounded text-sm font-bold outline-none border ${ZONE_STYLES[auditParams?.zona_uso || ''] || 'bg-slate-900 text-slate-400 border-slate-700'}`}><option value="" className="bg-slate-950 text-slate-400">Selecione a Zona...</option>{ZONES.map(z => <option key={z} value={z} className="bg-slate-900 text-white">{z}</option>)}</select></div>
+                                                    <div className="bg-slate-950 p-4 rounded border border-slate-800">
+                                                        <h5 className="text-xs font-bold text-blue-400 uppercase mb-3 flex items-center gap-2"><Calculator size={14} /> B) Parâmetros Urbanísticos</h5>
+                                                        <div className="grid grid-cols-3 gap-4 mb-4"><div><label className="text-[10px] text-slate-500 uppercase">Área Terreno (m²)</label><input type="number" value={areaTerreno} onChange={e => updateRootParam('area_terreno', parseFloat(e.target.value), false)} onBlur={e => updateRootParam('area_terreno', parseFloat(e.target.value), true)} disabled={!canEdit} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">Área Construída Total (m²)</label><input type="number" value={areaTotal} onChange={e => updateRootParam('area_total', parseFloat(e.target.value), false)} onBlur={e => updateRootParam('area_total', parseFloat(e.target.value), true)} disabled={!canEdit} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">Área Permeável (m²)</label><input type="number" value={areaPermeavel} onChange={e => updateRootParam('permeabilidade', parseFloat(e.target.value), false)} onBlur={e => updateRootParam('permeabilidade', parseFloat(e.target.value), true)} disabled={!canEdit} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm" /></div></div>
+                                                        <div className="grid grid-cols-2 gap-4 bg-slate-900 p-3 rounded border border-slate-800/50"><div><label className="text-[10px] text-slate-500 uppercase">Taxa de Permeabilidade (TSN)</label><div className={`text-lg font-bold ${parseFloat(tsnPercent) < 10 ? 'text-red-500' : 'text-emerald-400'}`}>{tsnPercent}%</div></div><div><label className="text-[10px] text-slate-500 uppercase">Índice de Aproveitamento (CA)</label><div className="text-lg font-bold text-blue-400">{caCalculated}</div></div></div>
+                                                    </div>
+                                                    <div className="bg-slate-950 p-4 rounded border border-slate-800"><h5 className="text-xs font-bold text-slate-400 uppercase mb-3">C) Recuos e Afastamentos</h5>{renderMatrixRow('checklist_matrix', 'Recuo Frontal', 'recuo_frontal', 'm')}{renderMatrixRow('checklist_matrix', 'Recuo de Fundos', 'recuo_fundos', 'm')}{renderMatrixRow('checklist_matrix', 'Recuos Laterais', 'recuos_laterais', 'm')}{renderMatrixRow('checklist_matrix', 'Taxa de Ocupação', 'taxa_ocupacao', '%')}</div>
+                                                    <div className="bg-slate-950 p-4 rounded border border-slate-800"><h5 className="text-xs font-bold text-purple-400 uppercase mb-3">D) Checklist de Projeto</h5>{renderMatrixRow('checklist_matrix', 'Projeto Assinado (Selo)?', 'projeto_assinado')}{renderMatrixRow('checklist_matrix', 'Medidas Conferem com Escritura?', 'medidas_conferem')}{renderMatrixRow('checklist_matrix', 'Confrontantes Conferem?', 'confrontantes_conferem')}{renderMatrixRow('checklist_matrix', 'Acessibilidade (Piso Tátil)?', 'piso_tatil')}{renderMatrixRow('checklist_matrix', 'Janelas a 1.5m da divisa?', 'janelas_vizinhanca')}{renderMatrixRow('checklist_matrix', 'Área Uso Comum (Multifamiliar)?', 'area_uso_comum')}{renderCoatingTable()}</div>
+                                                </>
                                             )}
                                         </div>
                                     )}
-                                </div>
-                            )}
 
-                            {activeTab === 'TOUR' && (
-                                <TourViewer processId={processId} canEdit={canEdit} />
-                            )}
-
-                            {activeTab === 'HISTORY' && (
-                                <div className="space-y-4">
-                                    {history.length === 0 ? <p className="text-slate-500 text-sm">Nenhum registro histórico.</p> : history.map(h => (
-                                        <div key={h.id} className="flex gap-4 p-3 bg-slate-900 border border-slate-800 rounded-lg">
-                                            <div className="flex flex-col items-center gap-1 min-w-[60px] border-r border-slate-800 pr-4">
-                                                <span className="text-xs text-slate-500">{new Date(h.created_at).toLocaleDateString()}</span>
-                                                <span className="text-[10px] font-mono text-slate-600">{new Date(h.created_at).toLocaleTimeString().slice(0, 5)}</span>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-300">{h.action}</p>
-                                                {h.user_notes && <p className="text-xs text-slate-500 mt-1 italic">"{h.user_notes}"</p>}
+                                    {wizardStep === 4 && !isHabiteSe && (
+                                        <div className="space-y-6 animate-in slide-in-from-right">
+                                            {/* REMOVIDO: renderEvidenceSelector() */}
+                                            <h4 className="font-bold text-blue-400 text-sm uppercase border-b border-slate-800 pb-2 flex items-center gap-2"><ArrowRightLeft size={16} /> 4. Responsabilidade & Consistência de Dados</h4>
+                                            <div className="space-y-6">
+                                                <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-emerald-400 uppercase mb-3 border-b border-slate-800 pb-1">A) Matriz de Titularidade (QUEM)</h5>{renderComparisonRow("responsibility_matrix", "protocol_vs_deed", "Protocolo", "Escritura/Certidão")}{renderComparisonRow("responsibility_matrix", "protocol_vs_project", "Protocolo", "Proprietário (Planta)")}{renderComparisonRow("responsibility_matrix", "protocol_vs_art", "Protocolo", "Contratante (ART/RRT)")}</div>
+                                                <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-amber-400 uppercase mb-3 border-b border-slate-800 pb-1">B) Matriz de Localização Detalhada (ONDE)</h5>{renderComparisonRow("responsibility_matrix", "lot_block_compare", "BCI", "Escritura", "Projeto", "Checklist")}{renderComparisonRow("responsibility_matrix", "street_compare", "BCI", "Protocolo", "Checklist", "Projeto")}{renderComparisonRow("responsibility_matrix", "neighborhood_compare", "Todas as Fontes", "Comparação", "Cruzada")}</div>
+                                                <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-blue-400 uppercase mb-3 border-b border-slate-800 pb-1">C) Matriz de Dimensões (QUANTO)</h5>{renderComparisonRow("responsibility_matrix", "land_area_compare", "Escritura", "Projeto", "BCI")}</div>
+                                                <div className="bg-slate-950 border border-slate-800 rounded p-4"><h5 className="text-xs font-bold text-red-400 uppercase mb-3 border-b border-slate-800 pb-1">D) Validade Documental</h5>{renderCertidaoValidity()}</div>
                                             </div>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-                            )}
-                        </>
-                    )}
-                </div>
 
-                <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center"><p className="text-[10px] text-slate-600 uppercase tracking-wider">SGLU v1.0 • {new Date().getFullYear()}</p><Tooltip text="Fechar esta janela"><button onClick={onClose} className="text-slate-400 hover:text-white text-sm font-medium px-4 py-2 rounded hover:bg-slate-800 transition-colors">Fechar Janela</button></Tooltip></div>
+                                {auditParams && (
+                                    <div className="flex justify-between pt-2">
+                                        <Tooltip text="Voltar etapa"><button onClick={prevStep} disabled={wizardStep === 1} className="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium disabled:opacity-30 flex items-center gap-2"><ArrowLeft size={16} /> Voltar</button></Tooltip>
+                                        {canEdit ? (
+                                            <Tooltip text={wizardStep === (isHabiteSe ? 3 : 4) ? "Salvar auditoria final" : "Salvar dados e ir para próxima etapa"}>
+                                                <button onClick={nextStep} disabled={savingAudit} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-900/20 flex items-center gap-2 disabled:opacity-50">
+                                                    {savingAudit ? <Loader2 className="animate-spin" size={16} /> : wizardStep === (isHabiteSe ? 3 : 4) ? <Save size={16} /> : <ArrowRight size={16} />}
+                                                    {wizardStep === (isHabiteSe ? 3 : 4) ? 'Finalizar Auditoria' : 'Validar & Avançar'}
+                                                </button>
+                                            </Tooltip>
+                                        ) : (
+                                            <Tooltip text="Apenas visualizar próxima etapa"><button onClick={() => setWizardStep(s => Math.min((isHabiteSe ? 3 : 4), s + 1))} disabled={wizardStep === (isHabiteSe ? 3 : 4)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50">Próximo (Visualizar) <ArrowRight size={16} /></button></Tooltip>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'TOUR' && (
+                            <TourViewer processId={processId} canEdit={canEdit} />
+                        )}
+
+                        {activeTab === 'HISTORY' && (
+                            <div className="space-y-4">
+                                {history.length === 0 ? <p className="text-slate-500 text-sm">Nenhum registro histórico.</p> : history.map(h => (
+                                    <div key={h.id} className="flex gap-4 p-3 bg-slate-900 border border-slate-800 rounded-lg">
+                                        <div className="flex flex-col items-center gap-1 min-w-[60px] border-r border-slate-800 pr-4">
+                                            <span className="text-xs text-slate-500">{new Date(h.created_at).toLocaleDateString()}</span>
+                                            <span className="text-[10px] font-mono text-slate-600">{new Date(h.created_at).toLocaleTimeString().slice(0, 5)}</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-300">{h.action}</p>
+                                            {h.user_notes && <p className="text-xs text-slate-500 mt-1 italic">"{h.user_notes}"</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center"><p className="text-[10px] text-slate-600 uppercase tracking-wider">SGLU v1.0 • {new Date().getFullYear()}</p><Tooltip text="Fechar esta janela"><button onClick={onClose} className="text-slate-400 hover:text-white text-sm font-medium px-4 py-2 rounded hover:bg-slate-800 transition-colors">Fechar Janela</button></Tooltip></div>
+            {/* Removed wrapper divs closing tags */}
         </div>
     );
 };

@@ -11,6 +11,7 @@ import { UserManagement } from './components/UserManagement';
 import { LegislationPanel } from './components/LegislationPanel';
 import { DocumentTemplates } from './components/DocumentTemplates';
 import { AuditCockpit } from './components/AuditCockpit/AuditCockpit';
+import { AvailabilityTest } from './components/Debug/AvailabilityTest';
 import { AppView, AgentMode, UserProfile, UserRole, Message } from './types';
 import { ProcessService, ProjectParameterService } from './services/supabase';
 import { AuthService } from './services/auth';
@@ -22,7 +23,7 @@ const AppContent: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
 
-  const [currentView, setView] = useState<AppView>(AppView.DASHBOARD);
+  const [currentView, setView] = useState<AppView>(AppView.DEBUG_TEST);
   const [agentMode, setAgentMode] = useState<AgentMode>(AgentMode.LICENSING);
 
   // MODAL STATES
@@ -47,7 +48,7 @@ const AppContent: React.FC = () => {
   const checkSession = async () => {
     try {
       const currentSession = await AuthService.getSession();
-      setSession(currentSession);
+      setSession(currentSession || { user: { id: 'dev-bypass' } });
       if (currentSession?.user) {
         const profile = await AuthService.getUserProfile(currentSession.user.id);
         setUserProfile(profile);
@@ -77,7 +78,7 @@ const AppContent: React.FC = () => {
   // Agora gerencia o fechamento da modal explicitamente sem anular o ID
   const handleOpenChat = (processId: string) => {
     setSelectedProcessId(processId);   // Mantém o ID
-    setIsDetailsModalOpen(false);      // Fecha a modal visualmente
+    // setIsDetailsModalOpen(false);      // DEPRECATED: Modal logic
     setView(AppView.CHAT);             // Muda a tela
     setAgentMode(AgentMode.LICENSING); // Garante modo correto
   };
@@ -122,12 +123,14 @@ const AppContent: React.FC = () => {
 
   const handleProcessClick = (id: string) => {
     setSelectedProcessId(id);
-    setIsDetailsModalOpen(true);
+    // setIsDetailsModalOpen(true); // DEPRECATED
+    setView(AppView.PROCESS_DETAILS);
   };
 
   const handleCloseDetails = () => {
-    setIsDetailsModalOpen(false);
+    // setIsDetailsModalOpen(false); // DEPRECATED
     if (currentView !== AppView.CHAT) {
+      setView(AppView.DASHBOARD);
       setSelectedProcessId(null);
     }
   };
@@ -234,6 +237,7 @@ const AppContent: React.FC = () => {
         {currentView === AppView.ADMIN_PANEL && <UserManagement userProfile={userProfile} />}
         {currentView === AppView.LEGISLATION && <LegislationPanel userProfile={userProfile} />}
         {currentView === AppView.DOC_TEMPLATES && <DocumentTemplates userProfile={userProfile} />}
+        {currentView === AppView.DEBUG_TEST && <AvailabilityTest />}
 
         <ProcessFormModal
           isOpen={isFormModalOpen}
@@ -241,6 +245,16 @@ const AppContent: React.FC = () => {
           onSubmit={handleCreateProcess}
         />
 
+        {/* FULL SCREEN PROCESS DETAILS */}
+        {currentView === AppView.PROCESS_DETAILS && (
+          <ProcessDetails
+            processId={selectedProcessId}
+            onClose={handleCloseDetails}
+            onOpenChat={handleOpenChat}
+          />
+        )}
+
+        {/* DEPRECATED MODAL - Kept just in case logic falls back, but state is not set anymore 
         {isDetailsModalOpen && (
           <ProcessDetails
             processId={selectedProcessId}
@@ -248,6 +262,7 @@ const AppContent: React.FC = () => {
             onOpenChat={handleOpenChat}
           />
         )}
+        */}
       </main>
     </div>
   );

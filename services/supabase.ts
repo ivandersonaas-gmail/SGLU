@@ -37,6 +37,12 @@ export const isSupabaseConfigured = () => {
     return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0 && (SUPABASE_URL as string) !== 'https://placeholder.supabase.co';
 };
 
+const sanitizeText = (text: string): string => {
+    if (!text) return "";
+    // Remove null bytes and substitute invalid characters
+    return text.replace(/\u0000/g, '').replace(/\\u0000/g, '');
+};
+
 const formatError = (err: any, context: string): Error => {
     try {
         if (String(err).includes('Failed to fetch')) {
@@ -224,7 +230,7 @@ export const ProcessService = {
 
         // TENTATIVA 1: Salvar com texto (Se a coluna existir)
         const payloadWithText = {
-            process_id: processId, name: file.name, file_url: urlData.publicUrl, file_type: docType, extracted_text: extractedText
+            process_id: processId, name: sanitizeText(file.name), file_url: urlData.publicUrl, file_type: docType, extracted_text: sanitizeText(extractedText)
         };
 
         let dbError;
@@ -363,7 +369,7 @@ export const LegislationService = {
 
         // TENTATIVA 1: Com texto
         const payload = {
-            name, category, description, file_url: url.publicUrl, extracted_text: extractedText
+            name: sanitizeText(name), category, description: sanitizeText(description), file_url: url.publicUrl, extracted_text: sanitizeText(extractedText)
         };
 
         const attempt1 = await supabase.from('legislation_files').insert([payload]);

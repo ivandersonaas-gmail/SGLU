@@ -24,7 +24,9 @@ export enum AppView {
   ADMIN_PANEL = 'ADMIN_PANEL',
   LEGISLATION = 'LEGISLATION',
   DOC_TEMPLATES = 'DOC_TEMPLATES',
-  AUDIT_COCKPIT = 'AUDIT_COCKPIT' // Nova View Modulo Auditoria
+  AUDIT_COCKPIT = 'AUDIT_COCKPIT', // Nova View Modulo Auditoria
+  PROCESS_DETAILS = 'PROCESS_DETAILS',
+  DEBUG_TEST = 'DEBUG_TEST'
 }
 
 export enum UserRole {
